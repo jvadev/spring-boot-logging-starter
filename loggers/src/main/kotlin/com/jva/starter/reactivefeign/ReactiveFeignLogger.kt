@@ -1,17 +1,22 @@
 package com.jva.starter.reactivefeign
 
 import com.jva.starter.properties.LoggingProperties
+import com.jva.starter.utils.JsonFormatter
+import com.jva.starter.utils.containsJsonContentTypeHeader
+import com.jva.starter.utils.format
 import feign.MethodMetadata
 import feign.Target
 import mu.KotlinLogging
+import org.reactivestreams.Publisher
 import reactivefeign.client.ReactiveHttpRequest
 import reactivefeign.client.ReactiveHttpResponse
 import reactivefeign.client.log.ReactiveLoggerListener
+import reactor.core.publisher.Flux
 
 private val logger = KotlinLogging.logger { }
 
 class ReactiveFeignLogger(
-    val properties: LoggingProperties
+    private val jsonFormatter: JsonFormatter
 ) : ReactiveLoggerListener<LogContext> {
 
 
@@ -31,7 +36,17 @@ class ReactiveFeignLogger(
         TODO("Not yet implemented")
     }
 
-    override fun bodyReceived(body: Any?, context: LogContext?) {
+    override fun bodyReceived(body: Any?, context: LogContext) {
+
+        val headers = msg { context.response?.headers()?.format(headerType = "RESPONSE") }
+        val bodyType = msg { context.response?.body()?.formatBodyType("RESPONSE") }
+        val message = msg {
+            body?.let {
+                "$bodyType ${prettifyJsonBodyIfExist(it, context)}"
+            }
+        }
+
+        logger.info("{} {} {}", context.feignMethodTag, headers, message)
     }
 
     override fun responseReceived(response: ReactiveHttpResponse<*>?, context: LogContext?) {
@@ -46,6 +61,18 @@ class ReactiveFeignLogger(
         TODO("Not yet implemented")
     }
 
+    private fun prettifyJsonBodyIfExist(body: Any, context: LogContext): Any? =
+        if (context.request.headers().containsJsonContentTypeHeader()) {
+            try {
+                jsonFormatter.prettifyJsonBody(body)
+            } catch (e: Exception) {
+                body
+            }
+        } else body
+
     private inline fun <T> msg(supplier: () -> T) = supplier()
+
+    private fun Publisher<*>.formatBodyType(bodyType: String): String =
+        if (this is Flux<*>) "$bodyType BODY ELEMENT:\n" else "$bodyType BODY:\n"
 
 }
