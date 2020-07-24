@@ -27,4 +27,10 @@ allprojects {
             dependency("io.kotest:kotest-assertions-core-jvm:4.0.6")
         }
     }
+
+    tasks.test {
+        useJUnitPlatform {
+            systemProperties("junit.jupiter.testinstance.lifecycle.default" to "per_class")
+        }
+    }
 }
