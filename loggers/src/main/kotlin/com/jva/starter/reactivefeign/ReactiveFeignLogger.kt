@@ -44,7 +44,7 @@ class ReactiveFeignLogger(
     override fun bodyReceived(body: Any?, context: LogContext?) {
         if (isExtendedLoggingEnabled) {
             val headers = msg { context?.response?.headers()?.format(headerType = RESPONSE) }
-            val bodyPrefix = msg { context?.response?.body()?.formatBodyPrefix(RESPONSE) }
+            val bodyPrefix = msg { context?.response?.body()?.formatBodyPrefix(bodyType = RESPONSE) }
             val message = msg {
                 body?.let { body ->
                     "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(body, context) }}"
@@ -62,7 +62,14 @@ class ReactiveFeignLogger(
 
     override fun bodySent(body: Any?, context: LogContext?) {
         if (isExtendedLoggingEnabled) {
-
+            val headers = msg { context?.request?.headers()?.format(headerType = REQUEST) }
+            val bodyPrefix = msg { context?.request?.body()?.formatBodyPrefix(bodyType = REQUEST) }
+            val message = msg {
+                body?.let { body ->
+                    "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(body, context) }}"
+                }
+            }
+            logger.info("[{}] {} {}", context?.feignMethodTag, headers, message)
         }
     }
 
