@@ -23,7 +23,6 @@ class ReactiveFeignLogger(
     private val clock: Clock
 ) : ReactiveLoggerListener<LogContext> {
 
-
     override fun requestStarted(
         request: ReactiveHttpRequest,
         target: Target<*>,
@@ -86,5 +85,4 @@ class ReactiveFeignLogger(
 
     private fun Publisher<*>.formatBodyPrefix(bodyType: String): String =
         if (this is Flux<*>) "$bodyType BODY ELEMENT:\n" else "$bodyType BODY:\n"
-
 }

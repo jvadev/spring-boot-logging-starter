@@ -9,7 +9,6 @@ class LoggingProperties {
         isExtendedLoggingEnabled = false
     )
 
-
     open class LoggingConfiguration(
         var isEnabled: Boolean,
         var isExtendedLoggingEnabled: Boolean

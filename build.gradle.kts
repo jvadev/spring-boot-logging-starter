@@ -21,16 +21,11 @@ allprojects {
         }
         dependencies {
             dependency("com.playtika.reactivefeign:feign-reactor-webclient:$reactiveFeignVersion")
+            dependency("com.playtika.reactivefeign:feign-reactor-spring-configuration:$reactiveFeignVersion")
             dependency("net.logstash.logback:logstash-logback-encoder:5.2")
             dependency("ch.qos.logback:logback-core:1.1.11")
             dependency("io.github.microutils:kotlin-logging:1.7.10")
             dependency("io.kotest:kotest-assertions-core-jvm:4.0.6")
-        }
-    }
-
-    tasks.test {
-        useJUnitPlatform {
-            systemProperties("junit.jupiter.testinstance.lifecycle.default" to "per_class")
         }
     }
 }
