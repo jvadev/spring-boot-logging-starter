@@ -1,5 +1,5 @@
 import ch.qos.logback.classic.PatternLayout
-import com.jva.starter.testappender.InMemoryAppender
+import com.jva.starter.appenders.InMemoryAppender
 
 appender("IN_MEMORY", InMemoryAppender) {
     encoder(LayoutWrappingEncoder) {
