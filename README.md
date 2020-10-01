@@ -1,2 +1,2 @@
 # spring-boot-logging-starter
-starter for logging requests and responses
+Starter for logging requests and responses

@@ -16,7 +16,7 @@ fun Map<String, Collection<String>>.containsJsonContentTypeHeader(): Boolean =
 fun String.isJsonContentTypeHeader(): Boolean = JSON_CONTENT_TYPES.any { it.toString() == this }
 
 fun Map<String, Collection<String>>.format(headerType: String): String =
-    String.format("%s HEADERS:\n%s", headerType,
+    String.format("%s HEADERS:\n %s", headerType,
         entries.stream()
             .map { entry -> "${entry.key}: ${entry.value.stream().collect(joining("; "))}" }
             .collect(joining("\n")))

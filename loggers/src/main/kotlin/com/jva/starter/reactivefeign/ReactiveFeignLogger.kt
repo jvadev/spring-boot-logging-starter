@@ -29,8 +29,8 @@ class ReactiveFeignLogger(
         methodMetadata: MethodMetadata
     ): LogContext {
         val logContext = LogContext(request, target, methodMetadata, clock)
-        val headers = msg { request.headers()?.format(headerType = REQUEST) }
-        logger.info("[{}]--->{} {} HTTP/1.1{}", logContext.feignMethodTag, request.method(), request.uri(), headers)
+        val headers = request.headers()?.format(headerType = REQUEST)
+        logger.info("[{}]--->{} {} HTTP/1.1\n {}", logContext.feignMethodTag, request.method(), request.uri(), headers)
         return logContext
     }
 
@@ -41,16 +41,12 @@ class ReactiveFeignLogger(
     override fun logRequestBody() = isExtendedLoggingEnabled
 
     override fun bodyReceived(body: Any?, context: LogContext?) {
-        if (isExtendedLoggingEnabled) {
-            val headers = msg { context?.response?.headers()?.format(headerType = RESPONSE) }
-            val bodyPrefix = msg { context?.response?.body()?.formatBodyPrefix(bodyType = RESPONSE) }
-            val message = msg {
-                body?.let { body ->
-                    "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(body, context) }}"
-                }
-            }
-            logger.info("[{}] {} {}", context?.feignMethodTag, headers, message)
+        val headers = context?.response?.headers()?.format(headerType = RESPONSE)
+        val bodyPrefix = context?.response?.body()?.formatBodyPrefix(bodyType = RESPONSE)
+        val message = body?.let {
+            "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(it, context) }}"
         }
+        logger.info("[{}]\n {}\n {}", context?.feignMethodTag, headers, message)
     }
 
     override fun responseReceived(response: ReactiveHttpResponse<*>?, context: LogContext?) {
@@ -60,16 +56,13 @@ class ReactiveFeignLogger(
     override fun logResponseBody() = isExtendedLoggingEnabled
 
     override fun bodySent(body: Any?, context: LogContext?) {
-        if (isExtendedLoggingEnabled) {
-            val headers = msg { context?.request?.headers()?.format(headerType = REQUEST) }
-            val bodyPrefix = msg { context?.request?.body()?.formatBodyPrefix(bodyType = REQUEST) }
-            val message = msg {
-                body?.let { body ->
-                    "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(body, context) }}"
-                }
-            }
-            logger.info("[{}] {} {}", context?.feignMethodTag, headers, message)
+        val headers = context?.request?.headers()?.format(headerType = REQUEST)
+        val bodyPrefix = context?.request?.body()?.formatBodyPrefix(bodyType = REQUEST)
+        val message = body?.let {
+            "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(it, context) }}"
         }
+
+        logger.info("[{}]\n {}\n {}", context?.feignMethodTag, headers, message)
     }
 
     private fun prettifyJsonBodyIfExist(body: Any, context: LogContext): Any? =
@@ -80,8 +73,6 @@ class ReactiveFeignLogger(
                 body
             }
         } else body
-
-    private inline fun <T> msg(supplier: () -> T) = supplier()
 
     private fun Publisher<*>.formatBodyPrefix(bodyType: String): String =
         if (this is Flux<*>) "$bodyType BODY ELEMENT:\n" else "$bodyType BODY:\n"
