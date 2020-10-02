@@ -3,6 +3,7 @@ package com.jva.starter.reactivefeign
 import com.jva.starter.utils.JsonFormatter
 import com.jva.starter.utils.containsJsonContentTypeHeader
 import com.jva.starter.utils.format
+import com.jva.starter.utils.formatHeaders
 import feign.MethodMetadata
 import feign.Target
 import mu.KotlinLogging
@@ -29,24 +30,30 @@ class ReactiveFeignLogger(
         methodMetadata: MethodMetadata
     ): LogContext {
         val logContext = LogContext(request, target, methodMetadata, clock)
-        val headers = request.headers()?.format(headerType = REQUEST)
+        val headers = request.headers()?.formatHeaders(headerType = REQUEST)
         logger.info("[{}]--->{} {} HTTP/1.1\n {}", logContext.feignMethodTag, request.method(), request.uri(), headers)
         return logContext
     }
 
     override fun errorReceived(throwable: Throwable?, context: LogContext) {
-        logger.error("[{}]--->{} {} HTTP/1.1", context.feignMethodTag, context.request.method(), context.request.uri())
+        logger.error(
+            "[{}]--->{} {} HTTP/1.1",
+            context.feignMethodTag,
+            context.request.method(),
+            context.request.uri(),
+            throwable
+        )
     }
 
     override fun logRequestBody() = isExtendedLoggingEnabled
 
     override fun bodyReceived(body: Any?, context: LogContext?) {
-        val headers = context?.response?.headers()?.format(headerType = RESPONSE)
+        val headers = context?.response?.headers()?.formatHeaders(headerType = RESPONSE)
         val bodyPrefix = context?.response?.body()?.formatBodyPrefix(bodyType = RESPONSE)
         val message = body?.let {
             "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(it, context) }}"
         }
-        logger.info("[{}]\n {}\n {}", context?.feignMethodTag, headers, message)
+        logger.info("\n[{}]\n {}\n {}", context?.feignMethodTag, headers, message)
     }
 
     override fun responseReceived(response: ReactiveHttpResponse<*>?, context: LogContext?) {
@@ -56,13 +63,12 @@ class ReactiveFeignLogger(
     override fun logResponseBody() = isExtendedLoggingEnabled
 
     override fun bodySent(body: Any?, context: LogContext?) {
-        val headers = context?.request?.headers()?.format(headerType = REQUEST)
+        val headers = context?.request?.headers()?.formatHeaders(headerType = REQUEST)
         val bodyPrefix = context?.request?.body()?.formatBodyPrefix(bodyType = REQUEST)
         val message = body?.let {
             "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(it, context) }}"
         }
-
-        logger.info("[{}]\n {}\n {}", context?.feignMethodTag, headers, message)
+        logger.info("\n[{}]\n {}\n {}", context?.feignMethodTag, headers, message)
     }
 
     private fun prettifyJsonBodyIfExist(body: Any, context: LogContext): Any? =
