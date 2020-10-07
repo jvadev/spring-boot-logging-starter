@@ -11,7 +11,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import reactivefeign.client.log.ReactiveLoggerListener
-import java.time.Clock
 
 @Configuration
 @ConditionalOnProperty(name = ["logging.reactive-feign.enabled"], havingValue = "true")
@@ -22,10 +21,10 @@ class ReactiveFeignConfiguration {
     @Bean
     fun reactiveFeignLogger(
         loggingProperties: LoggingProperties,
-        objectMapper: ObjectMapper): ReactiveLoggerListener<LogContext> =
+        objectMapper: ObjectMapper
+    ): ReactiveLoggerListener<LogContext> =
         ReactiveFeignLogger(
             isExtendedLoggingEnabled = loggingProperties.reactiveFeign.isExtendedLoggingEnabled,
-            jsonFormatter = JsonFormatter(objectMapper),
-            clock = Clock.systemDefaultZone()
+            jsonFormatter = JsonFormatter(objectMapper)
         )
 }

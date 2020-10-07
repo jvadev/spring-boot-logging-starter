@@ -16,7 +16,7 @@ fun String.isJsonContentTypeHeader(): Boolean = JSON_CONTENT_TYPES.any { it.toSt
 
 fun Map<String, Collection<String>>.formatHeaders(headerType: String): String {
     return String.format(
-        "%s HEADERS:\n %s", headerType, entries.joinToString(separator = "\n ") { entry ->
+        "%s HEADERS:\n%s", headerType, entries.joinToString(separator = "\n") { entry ->
             "${entry.key}: ${entry.value.joinToString(separator = "; ")}"
         }
     )

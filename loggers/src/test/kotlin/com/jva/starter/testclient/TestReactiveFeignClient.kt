@@ -8,5 +8,4 @@ interface TestReactiveFeignClient {
 
     @GetMapping("some/mono")
     fun getId()
-
 }

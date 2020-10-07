@@ -2,7 +2,6 @@ package com.jva.starter.reactivefeign
 
 import com.jva.starter.utils.JsonFormatter
 import com.jva.starter.utils.containsJsonContentTypeHeader
-import com.jva.starter.utils.format
 import com.jva.starter.utils.formatHeaders
 import feign.MethodMetadata
 import feign.Target
@@ -12,7 +11,6 @@ import reactivefeign.client.ReactiveHttpRequest
 import reactivefeign.client.ReactiveHttpResponse
 import reactivefeign.client.log.ReactiveLoggerListener
 import reactor.core.publisher.Flux
-import java.time.Clock
 
 private const val REQUEST = "REQUEST"
 private const val RESPONSE = "RESPONSE"
@@ -20,8 +18,7 @@ private val logger = KotlinLogging.logger { }
 
 class ReactiveFeignLogger(
     private val isExtendedLoggingEnabled: Boolean,
-    private val jsonFormatter: JsonFormatter,
-    private val clock: Clock
+    private val jsonFormatter: JsonFormatter
 ) : ReactiveLoggerListener<LogContext> {
 
     override fun requestStarted(
@@ -29,9 +26,9 @@ class ReactiveFeignLogger(
         target: Target<*>,
         methodMetadata: MethodMetadata
     ): LogContext {
-        val logContext = LogContext(request, target, methodMetadata, clock)
+        val logContext = LogContext(request, target, methodMetadata)
         val headers = request.headers()?.formatHeaders(headerType = REQUEST)
-        logger.info("[{}]--->{} {} HTTP/1.1\n {}", logContext.feignMethodTag, request.method(), request.uri(), headers)
+        logger.info("[{}]--->{} {} HTTP/1.1\n{}", logContext.feignMethodTag, request.method(), request.uri(), headers)
         return logContext
     }
 
@@ -53,7 +50,7 @@ class ReactiveFeignLogger(
         val message = body?.let {
             "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(it, context) }}"
         }
-        logger.info("\n[{}]\n {}\n {}", context?.feignMethodTag, headers, message)
+        logger.info("\n[{}]\n{}\n{}", context?.feignMethodTag, headers, message)
     }
 
     override fun responseReceived(response: ReactiveHttpResponse<*>?, context: LogContext?) {
@@ -68,7 +65,7 @@ class ReactiveFeignLogger(
         val message = body?.let {
             "$bodyPrefix ${context?.let { context -> prettifyJsonBodyIfExist(it, context) }}"
         }
-        logger.info("\n[{}]\n {}\n {}", context?.feignMethodTag, headers, message)
+        logger.info("\n[{}]\n{}\n{}", context?.feignMethodTag, headers, message)
     }
 
     private fun prettifyJsonBodyIfExist(body: Any, context: LogContext): Any? =

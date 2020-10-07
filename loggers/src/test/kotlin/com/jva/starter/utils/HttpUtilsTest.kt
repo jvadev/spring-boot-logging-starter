@@ -33,7 +33,7 @@ class HttpUtilsTest {
             "Accept-Language" to listOf("en-US")
         )
         // when:
-        val result = headers.format(headerType = "REQUEST")
+        val result = headers.formatHeaders(headerType = "REQUEST")
         // then:
         result shouldBe """
             |REQUEST HEADERS:

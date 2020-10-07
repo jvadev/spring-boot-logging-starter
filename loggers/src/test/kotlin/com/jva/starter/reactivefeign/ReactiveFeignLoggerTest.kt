@@ -21,19 +21,27 @@ import org.springframework.core.io.ClassPathResource
 import reactivefeign.client.ReactiveHttpRequest
 import reactivefeign.client.ReactiveHttpResponse
 import reactor.core.publisher.Mono
-import java.time.Clock
 
 private val URI = java.net.URI("http://localhost:8989/path1?queryKey1=queryVal1&queryKey2=queryVal2")
 private val REQUEST_HEADERS =
     mapOf("Content-Type" to listOf("application/json"), "Header-Type" to listOf("headerValue", "anotherOne"))
 private val RESPONSE_HEADERS = mapOf("Content-Type" to listOf("application/json"))
 
-
 class ReactiveFeignLoggerTest {
     private val mapper = ObjectMapper().findAndRegisterModules()
-    private val jsonFormatter = JsonFormatter(ObjectMapper())
+    private val jsonFormatter = JsonFormatter(mapper)
     private val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as Logger
     private val inMemoryAppender = root.getAppender(NAME) as InMemoryAppender
+    private val metadataList = SpringMvcContract().parseAndValidateMetadata(TestReactiveFeignClient::class.java)
+    private val target = Target.HardCodedTarget(TestReactiveFeignClient::class.java, URI.toString())
+    private val request = ReactiveHttpRequest(
+        metadataList[0], target, URI, REQUEST_HEADERS,
+        Mono.just(createJsonRequest())
+    )
+    private val reactiveLogger = ReactiveFeignLogger(
+        isExtendedLoggingEnabled = true,
+        jsonFormatter = jsonFormatter
+    )
 
     private val response: ReactiveHttpResponse<*> = mockk()
 
@@ -43,28 +51,29 @@ class ReactiveFeignLoggerTest {
     }
 
     @Test
-    fun `should log request and response as extended logging enabled`() {
+    fun `request should be logged with extended logging enabled`() {
         // given:
         val bodyRequest = createJsonRequest()
-        val bodyResponse = createJsonResponse()
-        val metadataList = SpringMvcContract().parseAndValidateMetadata(TestReactiveFeignClient::class.java)
-        val target = Target.HardCodedTarget(TestReactiveFeignClient::class.java, URI.toString())
-        val request = ReactiveHttpRequest(metadataList[0], target, URI, REQUEST_HEADERS, Mono.just(bodyRequest))
-        every { response.body() } returns Mono.just(bodyResponse)
-        every { response.headers() } returns RESPONSE_HEADERS
-        val reactiveLogger = ReactiveFeignLogger(
-            isExtendedLoggingEnabled = true,
-            jsonFormatter = jsonFormatter,
-            clock = Clock.systemDefaultZone()
-        )
         // when:
         val context = reactiveLogger.requestStarted(request, target, metadataList[0])
         if (reactiveLogger.logRequestBody()) reactiveLogger.bodySent(bodyRequest, context)
+        val capturedLogs = inMemoryAppender.capturedLogs.toString()
+        // then:
+        capturedLogs shouldContain createJsonRequest().toPrettyString()
+    }
+
+    @Test
+    fun `response should be logged with extended logging enabled`() {
+        // given:
+        val bodyResponse = createJsonResponse()
+        every { response.body() } returns Mono.just(bodyResponse)
+        every { response.headers() } returns RESPONSE_HEADERS
+        // when:
+        val context = reactiveLogger.requestStarted(request, target, metadataList[0])
         reactiveLogger.responseReceived(response, context)
         if (reactiveLogger.logResponseBody()) reactiveLogger.bodyReceived(bodyResponse, context)
         val capturedLogs = inMemoryAppender.capturedLogs.toString()
         // then:
-        capturedLogs shouldContain createJsonRequest().toPrettyString()
         capturedLogs shouldContain createJsonResponse().toPrettyString()
     }
 
